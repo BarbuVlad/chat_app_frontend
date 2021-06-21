@@ -91,7 +91,7 @@ const ChatMessage = ({message, owner}) => {
                     {message.user}
                 </Typography>
                 {/*Time */}
-                <Typography variant="h7"
+                <Typography variant="body1"
                  className={classes.time}>
                     {message.time}
                 </Typography>

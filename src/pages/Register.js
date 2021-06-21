@@ -4,6 +4,12 @@ import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
 
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+
 import Link from '@material-ui/core/Link';
 
 import { useState } from "react";
@@ -13,6 +19,7 @@ import { useHistory } from 'react-router-dom';
 import useStyles from '../styles';
 
 const Register = () => {
+    const history = useHistory();
 
     //States
     const [name, setName] = useState('');
@@ -28,14 +35,21 @@ const Register = () => {
     const [registerFail, setRegisterFail] = useState(false);
     const [popupText, setPopupText] = useState('');
     const [popupTitle, setPopupTitle] = useState(`Successfull`);
+    const [openRegister, setOpenRegister] = useState(false);
 
     const classes = useStyles();
     
+    /*Handlers */
+
+    const handleCloseRegister = () => {
+        setOpenRegister(false);
+    };
+
     //Methods and handlers
     const handleRegisterSubmit = async (e) => {
         e.preventDefault();
 
-        /*
+        
         setNameError(false);
         setPasswordError(false);
         setRepeatPasswordError(false);
@@ -49,54 +63,63 @@ const Register = () => {
                 setRepeatPasswordError(true);
                 setRegisterFail(true);
                 alert("Password must be the same");
+                //setOpenRegister(true);
                 return;
             }
             console.log(name, password);
           //history.push('/login');
           //fetch login from server
-            const register_result = await fetch('', {
+          try{
+            const register_result = await fetch('http://192.168.206.129:5000/api/users/register', {
                 method: 'POST',
                 headers: {"Content-type": "application/json"},
                 body: JSON.stringify({name, password})
             });
             const data = await register_result.json();
             //see server docs for info about this request
-            if(data["code"]==401){ //error occured on server (unknown)
+            if(data["code"]==-1){ //error occured on server (unknown)
                 setRegisterFail(true);
                 setPopupText("Error occured on server, please try again!");
                 setPopupTitle("Error");
+                setOpenRegister(true);
                 return;
             }
-            if(data["code"]==402){//user exists
+            if(data["code"]==2){//user exists
                 setRegisterFail(true);
-                setPopupText("A user has already been registered with this email");
+                setPopupText("A user has already been registered with this name");
                 setPopupTitle("Error");
+                setOpenRegister(true);
                 return;
             }
-            if(data["code"]==201){//success
+            if(data["code"]==0){//success
                 setRegisterFail(false);
-                setPopupText(`You have been registered! An email with the confirmation link was sent to ${email}`);
+                setPopupText(`You have been registered!`);
                 setPopupTitle("Success");
+                setOpenRegister(true);
                 return;
             }
 
-            if(data["code"]==403){ //validation error
+            if(data["code"]==1){ //validation error
                 setRegisterFail(true);
                 setPopupText(data["message"]);
                 setPopupTitle("Error");
+                setOpenRegister(true);
                 return;
             }
-            else{ // unkwown error (500?)
+        }catch(err){
+             // unkwown error (500?)
                 setRegisterFail(true);
-                setPopupText("Registration faied!");
+                setPopupText(`Registration faied (server or network error)
+                    ${err}`);
                 setPopupTitle("Error");
+                setOpenRegister(true);
                 return;
-            }
-
+        }
+ 
 
             //alert("Account created successfully. Go to login");
         }
-        */
+        
     }
 
     return (
@@ -152,6 +175,29 @@ const Register = () => {
         > 
             Register
         </Button>
+                    {/* ==== Register result dialog ===*/}
+                    <Dialog
+              open={openRegister}
+              onClose={handleCloseRegister}
+              aria-labelledby="alert-dialog-title"
+              aria-describedby="alert-dialog-description"
+            >
+            
+              <div style={{backgroundColor:"#3d3d3d", color: registerFail?"#d45559":"#9bdb5a", textAlign:"center"}}>
+              <DialogTitle id="alert-dialog-title">{popupTitle}</DialogTitle>
+              <DialogContent style={{color:"white"}}>
+                  {popupText}   
+              </DialogContent>
+                <div style={{display:"flex", justifyContent:"center", marginTop:10}}>
+                  <DialogActions>
+                    <Button onClick={handleCloseRegister} color="primary">
+                      OK
+                    </Button>
+                  </DialogActions>
+                </div>
+              </div>
+            </Dialog>
+            {/* ==== -------------------- ===*/}
         
 
         </div>

@@ -8,7 +8,14 @@ import Container from '@material-ui/core/Container';
 
 import AccountBoxIcon from '@material-ui/icons/AccountBox';
 
-import { useState } from "react";
+
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+
+import { useEffect, useState } from "react";
 
 import { useHistory } from 'react-router-dom';
 
@@ -28,32 +35,70 @@ const [passwordError, setPasswordError] = useState(false);
 //const jwt = useSelector((state)=>state.jwt);
 //const dispatch = useDispatch();
 
+//Other states
+const [loginFail, setLoginFail] = useState(false);
+const [popupText, setPopupText] = useState('');
+const [popupTitle, setPopupTitle] = useState(`Successfull`);
+const [openLogin, setOpenLogin] = useState(false);
+
+
 const history = useHistory();
 const classes = useStyles();
 
 //handlers
 const handleLoginSubmit = async (e) => {
     e.preventDefault();
-/*
-    setEmailError(false);
+
+    setNameError(false);
     setPasswordError(false);
-    if (email === '') {setEmailError(true)}
-    if (password === '') {setPasswordError(true)}
+    if (name === '') {setNameError(true); return}
+    if (password === '') {setPasswordError(true); return;}
     //validate
 
-    console.log(email, password);
+    console.log(name, password);
     //fetch login from server
     
-    const login_result  = await   fetch('', {
+    try{
+    const login_result  = await   fetch('http://192.168.206.129:5000/api/users/login', {
         method: 'POST',
         headers: {"Content-type": "application/json"},
-        body: JSON.stringify({email, password})
+        body: JSON.stringify({name, password})
     });
 
     const data = await login_result.json();
-    console.log(data);
-*/
+
+    if(data["code"]==1 || data["code"]==2){ //invalid data
+        setLoginFail(true);
+        setPopupText("Error occured, please try again!");
+        setPopupTitle("Error");
+        setOpenLogin(true);
+        return;
+    }
+    if(data["code"]==0){//success
+        setLoginFail(false);
+        localStorage.setItem("token", data["token"]);
+        localStorage.setItem("username", data["username"]);
+        localStorage.setItem("id", data["id"]);
+        console.log(data);
+        history.push("/home")
+        return;
+    }
+    } catch(err){
+        setLoginFail(true);
+        setPopupText(`Server or network error. Try again!`);
+        setPopupTitle("Error");
+        setOpenLogin(true);
+        return;
+    }
+
+
+    // console.log(data);
+
 }
+const handleCloseLogin = () => {
+    setOpenLogin(false);
+};
+
     return (
         <Container maxWidth="md">
         <Grid container
@@ -100,6 +145,30 @@ const handleLoginSubmit = async (e) => {
                     Login
                 </Button>
             </form>
+
+                                {/* ==== Register result dialog ===*/}
+                                <Dialog
+              open={openLogin}
+              onClose={handleCloseLogin}
+              aria-labelledby="alert-dialog-title"
+              aria-describedby="alert-dialog-description"
+            >
+            
+              <div style={{backgroundColor:"#3d3d3d", color: loginFail?"#d45559":"#9bdb5a", textAlign:"center"}}>
+              <DialogTitle id="alert-dialog-title">{popupTitle}</DialogTitle>
+              <DialogContent style={{color:"white"}}>
+                  {popupText}   
+              </DialogContent>
+                <div style={{display:"flex", justifyContent:"center", marginTop:10}}>
+                  <DialogActions>
+                    <Button onClick={handleCloseLogin} color="primary">
+                      OK
+                    </Button>
+                  </DialogActions>
+                </div>
+              </div>
+            </Dialog>
+            {/* ==== -------------------- ===*/}
     
             
             </Grid> {/*grid item 1 - login page */ }

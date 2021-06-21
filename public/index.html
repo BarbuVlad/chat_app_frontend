@@ -21,5 +21,34 @@
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
 
+    <script>
+
+    /*This script sets the token to null for this user,
+    If this value is null, the user will be automatically logged out for inactivity
+    This condition (token null) has to be enforced by the rest of the app logic*/
+      let count = 0;
+      let _interval;
+
+      function inactive(){
+         _interval =  setInterval(() => {
+          count+=1;
+          if(count==300){//after 5*2=10 minutes of inactivity, logout user (token = null)
+            localStorage.setItem("token", null);
+            document.title = "logged out!";
+            //location.reload();
+          }
+        }, 2000);
+      }
+      function active(){
+        clearInterval(_interval);
+        count = 0;
+        document.title = "Messages App";
+      }
+
+      document.addEventListener("visibilitychange", function() {
+      document.hidden ? inactive() : active();
+      });
+
+      </script>
   </body>
 </html>

@@ -12,6 +12,20 @@ Material UI is using this CSS in JS syntax
 
 
 const useStyles = makeStyles({
+    '@global': {
+        '*::-webkit-scrollbar': {
+          width: '0.4em'
+        },
+        '*::-webkit-scrollbar-track': {
+          '-webkit-box-shadow': 'inset 0 0 6px rgba(0,0,0,0.00)'
+        },
+        '*::-webkit-scrollbar-thumb': {
+          backgroundColor: 'rgba(0,0,0,.1)',
+          outline: '1px solid slategrey'
+        }
+      },
+
+
     btn: {
         fontSize: 23,
        // backgroundColor:"#ffc107",
@@ -155,7 +169,9 @@ main_view: {
 
     //backgroundColor:"blue",
 
-    //overflow: "hidden", /* Hide scrollbars */
+    overflow: "hidden", /* Hide scrollbars */
+    overflowY: "hidden", /* Hide vertical scrollbar */
+    overflowX: "hidden", /* Hide horizontal scrollbar */
 
 },
 
@@ -200,13 +216,11 @@ bottom_left_view: {
 
 right_view: {
     backgroundColor:"#3d3d3d",
-    
    // maxHeight: '10vh', 
-
 
 },
 right_view_messages:{
-   // overflow:"hidden", 
+    overflow:"hidden", 
   //  overflowY:"scroll",
  //   height:"200"
 },
