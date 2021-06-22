@@ -31,7 +31,7 @@
 
       function inactive(){
          _interval =  setInterval(() => {
-          count+=1;
+          count+=2;
           if(count==300){//after 5*2=10 minutes of inactivity, logout user (token = null)
             localStorage.setItem("token", null);
             document.title = "logged out!";
