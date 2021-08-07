@@ -161,7 +161,7 @@ main_view: {
     alignContent:"stretch",
     flexDirection:"row",
 
-    minHeight:"95vh",
+    minHeight:"100vh",
    // width:"100%",
 
     margin:0,
@@ -177,11 +177,11 @@ main_view: {
 
 left_menu_view: {
     display:"flex",
-   // justifyContent:"flex-start",
-    //alignItems:"stretch",
+    
+    justifyContent:"flex-start",
+    alignItems:"flex-start",
     //alignContent:"stretch",
    // placeItems:"center",
-   
     flexDirection:"column",
     //alignSelf:"flex-end",
     //height: "100%",
@@ -206,8 +206,11 @@ bottom_left_view: {
     minWidth:"100%",
     backgroundColor:"#3d3d3d",
     color: "white",
-    alignSelf:"stretch",
-
+    // alignItems:"flex-start",
+    // justifyContent:"flex-start",
+    alignSelf:"flex-start",
+    maxHeight: '70vh', 
+    minHeight:"60em",
     //dividers
     borderRight: "3px solid black",
     borderBottom: "3px solid black",
@@ -274,12 +277,72 @@ btn_add: {
     marginLeft:20
 },
 
+message_div: {
+    //flexDirection:"row",
+
+
+},
+message_textfield: {
+
+    position: "fixed",
+    bottom: 0,
+    right: 0,
+
+    margin: 8,
+
+    backgroundColor:"#1c1c1c",
+    maxWidth:"74%",
+    border: "1px solid #806104",
+    '&:hover' : {
+        backgroundColor: '#242424',
+    },
+
+},
+
+message_btn: {
+    position: "fixed",
+    bottom: 0,
+    right: 0,
+
+    margin: 12,
+
+},
+
 
 
 
 active: {
     background: '#404040'
 },
-    
+
+/**Settings: */
+settings_title_div: {
+    backgroundColor:"#ffc107",
+},
+settings_title: {
+     marginLeft:25
+},
+user_item: {
+    marginTop:20
+},
+user_button:{
+    marginLeft: 45,
+    color:"#ff8a65",
+    borderColor:"#ff8a65",
+    '&:disabled': {
+        color:"#6f7373",
+        borderColor:"#6f7373",
+     },
+},
+user_button_unblock:{
+    marginLeft: 45,
+    color:"#1398c2",
+    borderColor:"#1398c2",
+    '&:disabled': {
+        color:"#6f7373",
+        borderColor:"#6f7373",
+     },
+},
+
 });
 export default useStyles;

@@ -74,6 +74,13 @@ const handleLoginSubmit = async (e) => {
         setOpenLogin(true);
         return;
     }
+    if(data["code"]==3){ //invalid data
+        setLoginFail(true);
+        setPopupText(data["message"]);
+        setPopupTitle("Error");
+        setOpenLogin(true);
+        return;
+    }
     if(data["code"]==0){//success
         setLoginFail(false);
         localStorage.setItem("token", data["token"]);

@@ -1,6 +1,7 @@
 
 import { Paper, Typography } from "@material-ui/core";
 import {makeStyles} from "@material-ui/core/styles";
+// import { useEffect } from "react";
 
 const useStyles = makeStyles({
 
@@ -69,7 +70,7 @@ const useStyles = makeStyles({
 
 });
 
-const ChatMessage = ({message, owner}) => {
+const ChatMessage = ({message, owner, ownerName}) => {
 /*owner must be either:
     true - message send by current user
     false - message send by contact
@@ -88,18 +89,18 @@ const ChatMessage = ({message, owner}) => {
                 {/*User name */}
                 <Typography variant="h6"
                 className={classes.name}>
-                    {message.user}
+                    {ownerName}
                 </Typography>
                 {/*Time */}
                 <Typography variant="body1"
                  className={classes.time}>
-                    {message.time}
+                    {message[ownerName][1]}
                 </Typography>
                 </div>
                 {/*Message body */}
                 <Typography variant="body1" gutterBottom
                  className={classes.text}>
-                    {message.message}
+                    {message[ownerName][0]}
                 </Typography>
 
 

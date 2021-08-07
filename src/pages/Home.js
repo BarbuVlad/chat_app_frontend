@@ -1,12 +1,9 @@
 import { Button, GridList, GridListTile, TextField, Typography } from "@material-ui/core";
 import Grid from "@material-ui/core/Grid";
 
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 
 import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemText from "@material-ui/core/ListItemText";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
 
 import { useHistory } from 'react-router-dom';
 
@@ -20,47 +17,50 @@ import Divider from "@material-ui/core/Divider";
 import IconButton from '@material-ui/core/IconButton';
 
 import SettingsIcon from '@material-ui/icons/Settings';
+import SendIcon from '@material-ui/icons/Send';
 
 import useStyles from '../styles';
 import Contact from "../components/Contact";
 import ChatMessage from '../components/ChatMessage';
 import useInterval from "../components/_useInterval";
 import DialogBox from "../components/DialogBox";
+//import { Alarm } from "@material-ui/icons";
+
+import { useSelector, useDispatch } from "react-redux";
+import {setSelected} from '../redux/SelectedSlice';
+import {setConversation, addToConversation} from '../redux/ConversationSlice';
+
+//import { io } from "socket.io-client";
+import socketIOClient from "socket.io-client";
+
 const Home = () => {
 
-    const selected = "Alex";
-    const conversation = [{user:"Alex", message:"Hello", time:"21 April 14:55"},
-    {user:"Vlad", message:"Hello Alex!", time:"21 April 14:56"},
-    {user:"Vlad", message:"What time are you free?", time:"21 April 14:56"},
-    {user:"Alex", message:"Around 7 p.m.", time:"21 April 14:59"},
-    {user:"Alex", message:"orem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus maximus, dui mattis euismod rutrum, velit elit suscipit urna, ac elementum orci felis vulputate lacus. Maecenas ultrices dolor pulvinar, scele", time:"21 April 14:59"},
-    {user:"Alex", message:"orem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus maximus, dui mattis euismod rutrum, velit elit suscipit urna, ac elementum orci felis vulputate lacus. Maecenas ultrices dolor pulvinar, scele", time:"21 April 14:59"},
-    {user:"Alex", message:"orem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus maximus, dui mattis euismod rutrum, velit elit suscipit urna, ac elementum orci felis vulputate lacus. Maecenas ultrices dolor pulvinar, scele", time:"21 April 14:59"},
-    {user:"Alex", message:"orem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus maximus, dui mattis euismod rutrum, velit elit suscipit urna, ac elementum orci felis vulputate lacus. Maecenas ultrices dolor pulvinar, scele", time:"21 April 14:59"},
-    {user:"Alex", message:"orem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus maximus, dui mattis euismod rutrum, velit elit suscipit urna, ac elementum orci felis vulputate lacus. Maecenas ultrices dolor pulvinar, scele", time:"21 April 14:59"},
-  ]
-    const contacts = [
-      {name:"Alex", id:0},
-      {name:"Bogdan", id:1},
-      {name:"Andreea", id:2},
-      {name:"Jason", id:3},
-      {name:"Maria", id:4},
-      {name:"Alex", id:5},
-      {name:"Bogdan", id:6},
-      {name:"Andreea", id:7},
-      {name:"Jason", id:8},
-      {name:"Maria", id:9},
-
-    ];
     const [openLogout, setOpenLogout] = useState(false);
     const [openAdd, setOpenAdd] = useState(false);
     const [usernameSearch, setUsernameSearch] = useState(``);
+    const [message, setMessage] = useState(``);
+    //Contacts states:
+    const [contacts, setContacts] = useState([]);
+    const [invites, setInvites] = useState([]);
+    const [pendingContacts, setPendingContacts] = useState([]);
+
+    //const [selected, setSelected] = useState(null);
+    const selected = useSelector((state) => state.selected);
+    const conversation = useSelector((state) => state.conversation);
+    const dispatch = useDispatch();
+    //dispatch(set())
+    // const [reRender, setReRender] = useState(0);
 
     const classes = useStyles();
     const history = useHistory();
+
+    const socket = useRef();
+    //const [socket, setSocket] = useState();
+
     /*Handlers */
     const handleLogoutClick = () => {
       setOpenLogout(true);
+
 
     }
 
@@ -74,6 +74,8 @@ const Home = () => {
     const handleConfirmLogout = () => { ///< logs out the user
       setOpenLogout(false);
       localStorage.setItem("token", null);
+      localStorage.setItem("conversation_id", null);
+      localStorage.setItem("id", null);
       history.push("/");
     };
     
@@ -89,11 +91,102 @@ const Home = () => {
       }
   }, 2000);
 
+  useEffect(()=>{
+    const fetchContacts = async () => {
+      try{
+        /*Get  contacts, pending_contacts, invites and format_lists=true (insert the username for that contact)*/
+      const contact_fetch = await fetch(`http://192.168.206.129:5000/api/users/self/?contacts&pending_contacts&invites&format_lists=true`, {
+        method: 'GET',
+        headers: {"Content-type": "application/json",
+                    "x-auth-token": localStorage.getItem("token")
+                    }
+    });
+    const data = await contact_fetch.json(); 
+    if(data["code"]!=0){
+      alert("Can't fetch contacts. Network error!");
+      return;
+    }
+
+    let contact_arr = [];
+    data["data"]["contacts"].forEach((c)=>{
+      c["type"]="contact";
+      contact_arr.push(c);
+    });
+
+    let invite_arr = [];
+    data["data"]["invites"].forEach((i)=>{
+      i["type"]="invite";
+      invite_arr.push(i);
+    });
+
+    let pending_contact_arr = [];
+    data["data"]["pending_contacts"].forEach((p)=>{
+      p["type"]="pending_contact";
+      pending_contact_arr.push(p);
+    });
+    setContacts(contact_arr);
+    setInvites(invite_arr);
+    setPendingContacts(pending_contact_arr);
+
+    console.log(contact_arr);
+    } catch(err){
+      alert("Error occurred at fetching contact data...");
+      console.log(err);
+    }
+    
+  }
+  fetchContacts();
+  // localStorage.setItem("debug"'*');
+
+  //Connect to webSockets server
+   socket.current = socketIOClient('ws://192.168.206.129:3001');
+  //setSocket(io('ws://192.168.206.129:3001'));
+  socket.current.on("connect", () =>{
+    console.log(`Websockets connection created with id: ${socket.current.id} `);
+  });
+
+  socket.current.on("to_client_message", msg => {
+    dispatch(addToConversation(msg));
+  
+  });
+
+  }, []);
+
+  useEffect(() => {
+
+    
+
+    // return () => {
+      
+    // }
+  });
+
+  useEffect(() => {
+    socket.current.emit('join_conversation', localStorage.getItem("conversation_id"))
+    console.log("Joined other conv...\n");
+  }, [selected]);
+
+  const messageEmitHandler = async () => {
+    //{"bot":["Conversation can be started!", moment().format('h:mm a')]}
+    //create message 
+      const _username = localStorage.getItem("username");
+      let today = new Date();
+      let time = today.getHours() + ':' + today.getMinutes() + ':' + today.getSeconds();
+      let msg = { [_username] : [message, time] };
+      //console.log("message to be send: ", msg);
+      setMessage('');
+
+      dispatch(addToConversation(msg));
+      socket.current.emit("message", msg, localStorage.getItem("conversation_id"));
+
+
+  }
+
     return (
         <Grid container spacing={0} className={classes.main_view}>
 
         {/* ===Left menus=== */}
-        <Grid container item xs={4} className={classes.left_menu_view} spacing={0} >
+        <Grid container item xs={3} className={classes.left_menu_view} spacing={0} >
             
             {/* Top left view */}
             <Grid item xs={2} className={classes.top_left_view} > 
@@ -131,7 +224,7 @@ const Home = () => {
             {/* ==== -------------------- ===*/}
 
             
-            <IconButton className={classes.btn_settings}>
+            <IconButton className={classes.btn_settings} onClick={()=>{history.push("/settings")}}>
             <SettingsIcon/>
             </IconButton>
 
@@ -168,24 +261,83 @@ const Home = () => {
             <Grid item xs={10} className={classes.bottom_left_view}>
             <List>
                         {contacts.map(contact => (
-                          <Contact key={contact.id} contact={contact}/>
-
+                          <Contact 
+                          key={contact.id} 
+                          contact={contact}
+                          />
+                        ))}
+                        {invites.map(contact => (
+                          <Contact 
+                          key={contact.id} 
+                          contact={contact}
+                          />
+                        ))}
+                        {pendingContacts.map(contact => (
+                          <Contact  
+                          key={contact.id} 
+                          contact={contact}
+                          />
                         ))}
                     </List>
 
             </Grid>
-
             {/*Container of menus */}
          </Grid>
         {/* ================ */}
             {/* Right view */}
-            <Grid item xs={8} className={classes.right_view}>
+            <Grid item xs={9} className={classes.right_view}>
               <nav className={classes.right_view_messages}>
               {conversation.map((message)=>(
                 <ChatMessage message={message} 
-                owner={message.user==="Vlad" ? true : false}/>
+                owner={Object.keys(message)[0]===localStorage.getItem("username") ? true : false}
+                ownerName={Object.keys(message)[0]}
+                />
               ))}
+
               </nav>
+
+{   selected!=="" ?
+          <div>
+              <TextField
+              className={classes.message_textfield}
+              placeholder="Message"
+              fullWidth
+              margin="none"
+              variant="filled"
+              multiline
+              rows="1"
+              rowsMax="2"
+
+              InputLabelProps={{
+                shrink: true,
+                classes: {
+                  root: classes.cssLabel,
+                  focused: classes.cssFocused,
+                },
+              }}
+              error={false}
+              InputProps={{
+                  className: classes.input
+                }}
+
+                onChange={(e) => setMessage(e.target.value)}
+                value={message}
+              />
+            <IconButton color="primary" 
+            className={classes.message_btn} 
+            aria-label="directions"
+            onClick={messageEmitHandler}
+            >
+                <SendIcon />
+            </IconButton>
+            </div>
+    :
+    <></>
+
+}
+
+
+
             </Grid>
             
         </Grid>
